@@ -1,154 +1,65 @@
-Slider Trinkey Brightness Controller for Linux
-This repository contains the necessary scripts to use an Adafruit Slider Trinkey as a hardware monitor brightness controller on a Linux machine. It consists of two main parts:
-
-CircuitPython Script: This code runs on the Slider Trinkey itself. It reads the position of the potentiometer slider and prints the value to the serial port.
-
-Host Python Script: This script runs on your Linux PC. It listens to the serial output from the Slider Trinkey and uses the brightnessctl command-line utility to adjust your monitor's brightness.
-
-💻 Setup and Usage
-Step 1: Prepare the Adafruit Slider Trinkey
-First, you need to ensure the Slider Trinkey is running the provided CircuitPython code.
-
-Install CircuitPython: Follow the official Adafruit guide to get CircuitPython running on your device.
-
-Upload trinkeycode.py: Copy the trinkeycode.py script onto your Slider Trinkey's CIRCUITPY drive. This script reads the potentiometer's value and prints it to the serial console.
-
-Step 2: Prepare Your Linux Machine
-Next, you'll set up your Linux machine to read from the Slider Trinkey and control the brightness.
-
-Install Dependencies: You'll need python3, pip, and the brightnessctl utility. On Debian/Ubuntu-based systems, you can install them with the following command:
-
-sudo apt install python3 python3-pip brightnessctl
-
-Install Python Libraries: Install the necessary Python libraries for serial communication.
-
-pip3 install pyserial
-
-Download the Host Script: Save the ctlbright.py script to your computer.
-
-Run the Script: Connect your Slider Trinkey to a USB port. Run the host script with sudo to ensure it has the necessary permissions to control brightness.
-
-sudo python3 ctlbright.py
-
-The script will print the current brightness and then automatically adjust the brightness as you move the slider on the trinkey.
-
-🎬 Demonstration
-A video demonstrating the functionality of the Slider Trinkey brightness controller can be added here.
-
-📄 Code Reference
-trinkeycode.py (CircuitPython for Slider Trinkey)
-This script maps the analog input from the potentiometer to a 0-100 value and prints it to the serial port.
-
-# SPDX-FileCopyrightText: 2021 Kattni Rembor for Adafruit Industries
-#
-# SPDX-License-Identifier: MIT
-
-import time
+Adafruit Slider Trinkey ProjectA brief one-sentence description of what this project does.DemoA short video or GIF demonstrating the project in action.Note: Replace the link above with your own YouTube video ID.📝 DescriptionProvide a more detailed overview of your project here. Explain what problem it solves, what its main features are, and how it works.🚀 FeaturesFeature 1: Capacitive touch slider input.Feature 2: Two RGB NeoPixel LEDs for visual feedback.Feature 3: USB C connectivity.Add any other features specific to your project.💻 Code SnippetsBelow are some basic examples to get you started. You can replace these with your own code.CircuitPythonThis example shows how to read the slider's value and change the NeoPixel colors.import time
 import board
-from analogio import AnalogIn
-import adafruit_simplemath
+import touchio
+from adafruit_trinkey import Trinkey
+import neopixel
 
-analog_in = AnalogIn(board.POTENTIOMETER)
+# --- Setup ---
+trinkey = Trinkey()
+pixels = neopixel.NeoPixel(board.NEOPIXEL, 2)
+touch = touchio.TouchIn(board.TOUCH)
 
-def read_pot(samples, min_val, max_val):
-    sum_samples = 0
-    for _ in range(samples):
-        sum_samples += analog_in.value
-    sum_samples /= samples
-
-    return adafruit_simplemath.map_range(sum_samples, 100, 65535, min_val, max_val)
-
+# --- Main Loop ---
 while True:
-    print("Slider:", round(read_pot(10, 0, 100)))
+    slider_position = touch.raw_value
+
+    print(f"Slider Value: {slider_position}")
+
+    # Example: Change pixel color based on slider position
+    if slider_position > 3000:
+        pixels.fill((255, 0, 0)) # Red
+    elif slider_position > 1000:
+        pixels.fill((0, 255, 0)) # Green
+    else:
+        pixels.fill((0, 0, 255)) # Blue
+
+    pixels.show()
     time.sleep(0.1)
+Arduino (C++)This is a basic structure for an Arduino sketch for the Slider Trinkey.#include <Adafruit_NeoPixel.h>
+#include <Adafruit_FreeTouch.h>
 
-ctlbright.py (Python for Linux Host)
-This script listens for the serial output and uses the brightnessctl command to control the display brightness.
+#define PIN_NEOPIXEL 1
+#define PIN_TOUCH    A0 // Or the correct analog pin for the slider
 
-import sys
-import serial
-from serial.tools import list_ports
-import subprocess
-import time
+// --- Setup ---
+Adafruit_NeoPixel pixels(2, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+Adafruit_FreeTouch touch(PIN_TOUCH, OVERSAMPLE_4, RESISTOR_50K, FREQ_MODE_PROBE);
 
-def get_current_brightness():
-    """
-    Gets the current monitor brightness using brightnessctl.
-    Returns the brightness value as an integer.
-    """
-    try:
-        # Use subprocess to run the brightnessctl command to get the current brightness
-        result = subprocess.run(
-            ['brightnessctl', 'get'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        return int(result.stdout.strip())
-    except (subprocess.CalledProcessError, ValueError) as e:
-        print(f"Error getting brightness: {e}")
-        return 0
+void setup() {
+  Serial.begin(115200);
+  pixels.begin();
 
-def set_monitor_brightness(value):
-    """
-    Sets the monitor brightness using brightnessctl.
-    The value is a percentage from 0 to 100.
-    """
-    try:
-        # Use subprocess to run the brightnessctl command to set the brightness
-        subprocess.run(
-            ['sudo', 'brightnessctl', 'set', f'{value}%'],
-            check=True
-        )
-    except subprocess.CalledProcessError as e:
-        print(f"Error setting brightness: {e}")
+  if (!touch.begin()) {
+    Serial.println("Failed to start FreeTouch!");
+  }
+}
 
-# Find the Adafruit Slider Trinkey port
-slider_trinkey_port = None
-ports = list_ports.comports(include_links=False)
-for p in ports:
-    if p.pid is not None:
-        print("Port:", p.device, "-", hex(p.pid), end="\t")
-        # The PID for the Slider Trinkey is 0x8102
-        if p.pid == 0x8102:
-            slider_trinkey_port = p
-            print("Found Slider Trinkey!")
-            trinkey = serial.Serial(p.device)
-            break
-else:
-    print("Did not find Slider Trinkey port :(")
-    sys.exit()
+// --- Main Loop ---
+void loop() {
+  int slider_value = touch.measure();
 
-# Get the initial brightness and a brightness value to start with
-curr_brightness = get_current_brightness()
-last_brightness = curr_brightness
+  Serial.print("Slider Value: ");
+  Serial.println(slider_value);
 
-print(f"Initial brightness: {curr_brightness}%")
+  // Example: Set brightness based on slider value
+  if (slider_value > 500) {
+    pixels.setBrightness(255);
+  } else {
+    pixels.setBrightness(50);
+  }
+  pixels.fill(pixels.Color(0, 150, 255));
+  pixels.show();
 
-# Main loop to read from the Slider Trinkey and adjust brightness
-while True:
-    try:
-        x = trinkey.readline().decode('utf-8')
-        if not x.startswith("Slider: "):
-            continue
-
-        # Extract the value from the serial output and convert it to a percentage
-        val = int(float(x.split(": ")[1]))
-        
-        # Check if the value has changed significantly before updating
-        # This prevents the script from constantly trying to update the brightness
-        # which can cause issues or lag.
-        if abs(val - last_brightness) > 1:
-            print("Setting brightness to:", val)
-            set_monitor_brightness(val)
-            last_brightness = val
-            time.sleep(0.1) # Small delay to avoid hammering the brightnessctl command
-
-    except serial.SerialException as e:
-        print(f"Serial communication error: {e}")
-        break
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        break
-
-print("Exiting script.")
+  delay(100);
+}
+🛠️ InstallationHardware:Adafruit Slider TrinkeyUSB-C CableSoftware:CircuitPython for Slider TrinkeyMu Editor or any other text editor.Add your own detailed setup instructions here.📜 LicenseThis project is licensed under the MIT License.
