@@ -1,30 +1,44 @@
 Slider Trinkey Brightness Controller for Linux
 This repository contains the necessary scripts to use an Adafruit Slider Trinkey as a hardware monitor brightness controller on a Linux machine. It consists of two main parts:
+
 CircuitPython Script: This code runs on the Slider Trinkey itself. It reads the position of the potentiometer slider and prints the value to the serial port.
+
 Host Python Script: This script runs on your Linux PC. It listens to the serial output from the Slider Trinkey and uses the brightnessctl command-line utility to adjust your monitor's brightness.
+
 💻 Setup and Usage
 Step 1: Prepare the Adafruit Slider Trinkey
 First, you need to ensure the Slider Trinkey is running the provided CircuitPython code.
+
 Install CircuitPython: Follow the official Adafruit guide to get CircuitPython running on your device.
+
 Upload trinkeycode.py: Copy the trinkeycode.py script onto your Slider Trinkey's CIRCUITPY drive. This script reads the potentiometer's value and prints it to the serial console.
+
 Step 2: Prepare Your Linux Machine
 Next, you'll set up your Linux machine to read from the Slider Trinkey and control the brightness.
+
 Install Dependencies: You'll need python3, pip, and the brightnessctl utility. On Debian/Ubuntu-based systems, you can install them with the following command:
+
 sudo apt install python3 python3-pip brightnessctl
 
-
 Install Python Libraries: Install the necessary Python libraries for serial communication.
+
 pip3 install pyserial
 
-
 Download the Host Script: Save the ctlbright.py script to your computer.
+
 Run the Script: Connect your Slider Trinkey to a USB port. Run the host script with sudo to ensure it has the necessary permissions to control brightness.
+
 sudo python3 ctlbright.py
 
 The script will print the current brightness and then automatically adjust the brightness as you move the slider on the trinkey.
+
+🎬 Demonstration
+A video demonstrating the functionality of the Slider Trinkey brightness controller can be added here.
+
 📄 Code Reference
 trinkeycode.py (CircuitPython for Slider Trinkey)
 This script maps the analog input from the potentiometer to a 0-100 value and prints it to the serial port.
+
 # SPDX-FileCopyrightText: 2021 Kattni Rembor for Adafruit Industries
 #
 # SPDX-License-Identifier: MIT
@@ -48,9 +62,9 @@ while True:
     print("Slider:", round(read_pot(10, 0, 100)))
     time.sleep(0.1)
 
-
 ctlbright.py (Python for Linux Host)
 This script listens for the serial output and uses the brightnessctl command to control the display brightness.
+
 import sys
 import serial
 from serial.tools import list_ports
